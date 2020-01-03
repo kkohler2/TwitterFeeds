@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             xmlns:models="clr-namespace:TwitterFeeds.Models"
+             xmlns:views="clr-namespace:TwitterFeeds.Views"
+             x:Class="TwitterFeeds.MainPage">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <DataTemplate x:Key="TweetTemplate">
+                <views:TweetCell />
+            </DataTemplate>
+            <DataTemplate x:Key="TweetWithMediaTemplate">
+                <views:TweetWithMediaCell />
+            </DataTemplate>
+            <views:TweetDataTemplateSelector
+                x:Key="TweetDataTemplateSelector"
+                TweetTemplate="{StaticResource TweetTemplate}"
+                TweetWithMediaTemplate="{StaticResource TweetWithMediaTemplate}" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <StackLayout>
+        <Picker x:Name="FeedPicker" ItemsSource="{Binding Feeds, Mode=TwoWay}" Title="Select Feed" ItemDisplayBinding="{Binding Name}" SelectedItem="{Binding SelectedFeed, Mode=TwoWay}" WidthRequest="300" FontSize="17"  HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand"/>
+        <Grid HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+            <ListView
+            x:Name="listView"
+            BackgroundColor="{StaticResource WindowBackgroundColor}"
+            d:ItemTemplate="{StaticResource TweetTemplate}"
+            CachingStrategy="RecycleElement"
+            HasUnevenRows="True"
+            IsPullToRefreshEnabled="True"
+            IsRefreshing="{Binding IsBusy, Mode=OneWay}"
+            ItemTemplate="{StaticResource TweetDataTemplateSelector}"
+            ItemsSource="{Binding Tweets}"
+            RefreshCommand="{Binding RefreshCommand}"
+            SeparatorColor="Transparent">
+                <d:ListView.ItemsSource>
+                    <x:Array Type="{x:Type modelsShared:Tweet}">
+                        <models:Tweet
+                        Image="scott.png"
+                        MediaUrl="scott.png"
+                        ScreenName="scotthanselman"
+                        Text="Hello world this is a tweet, james is pretty awesome, and this app is amazing!!!!" />
+                        <models:Tweet
+                        Image="scott.png"
+                        ScreenName="scotthanselman"
+                        Text="Hello world this is a tweet, james is pretty awesome, and this app is amazing!!!!" />
+                    </x:Array>
+                </d:ListView.ItemsSource>
+            </ListView>
+            <Frame
+            Padding="12"
+            d:IsVisible="true"
+            BackgroundColor="{StaticResource LoadingBackgroundColor}"
+            CornerRadius="10"
+            HasShadow="False"
+            HorizontalOptions="Center"
+            IsVisible="{Binding IsBusy}"
+            VerticalOptions="Center"
+            Visual="Material">
+                <StackLayout>
+                    <ActivityIndicator
+                    d:IsRunning="true"
+                    IsRunning="{Binding IsBusy}"
+                    Visual="Material"
+                    Color="{StaticResource LoadingTextColor}" />
+                    <Label
+                    HorizontalOptions="Center"
+                    Text="Loading tweets..."
+                    TextColor="{StaticResource LoadingTextColor}" />
+                </StackLayout>
+            </Frame>
+        </Grid>
+    </StackLayout>
+
+</ContentPage>
