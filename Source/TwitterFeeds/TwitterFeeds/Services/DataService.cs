@@ -57,23 +57,10 @@ namespace TwitterFeeds.Services
                 }
             }
             return Task.FromResult(feeds.OrderBy(f => f.Name).ToList());
-            //return Task.FromResult(new List<Feed>
-            //{
-            //    new Feed
-            //    {
-            //        Name = "Donald J. Trump",
-            //        UserName = "@realdonaldtrump"
-            //    },
-            //    new Feed
-            //    {
-            //        Name = "Donald J. Trump Parody",
-            //        UserName = "@realdonaldtrfan"
-            //    }
-            //});
         }
 
 
-        public async Task<IEnumerable<Tweet>> GetTweetsAsync(string screenName)
+        public async Task<IEnumerable<Tweet>> GetTweetsAsync(string screenName, bool includeRetweets)
         {
             var accessToken = await GetAccessToken(client);
 
@@ -87,8 +74,9 @@ namespace TwitterFeeds.Services
 
             var tweetsRaw = TweetRaw.FromJson(json);
 
-            return tweetsRaw.Select(t => new Tweet
+            List<Tweet> tweets = tweetsRaw.Select(t => new Tweet
             {
+                IsReTweet = t?.RetweetedStatus != null,
                 StatusID = t?.RetweetedStatus?.User?.ScreenName == screenName ? t.RetweetedStatus.IdStr : t.IdStr,
                 ScreenName = t?.RetweetedStatus?.User?.ScreenName ?? t.User.ScreenName,
                 Text = t?.Text,
@@ -99,6 +87,11 @@ namespace TwitterFeeds.Services
                                      t.RetweetedStatus.User.ProfileImageUrlHttps.ToString() : (t?.User?.ScreenName == screenName ? "liar_in_chief.png" : t?.User?.ProfileImageUrlHttps.ToString()),
                 MediaUrl = t?.Entities?.Media?.FirstOrDefault()?.MediaUrlHttps?.AbsoluteUri
             }).ToList();
+            if (!includeRetweets)
+            {
+                tweets = tweets.Where(t => !t.IsReTweet).ToList();
+            }
+            return tweets;
         }
 
         public readonly string[] DateFormats = { "ddd MMM dd HH:mm:ss %zzzz yyyy",

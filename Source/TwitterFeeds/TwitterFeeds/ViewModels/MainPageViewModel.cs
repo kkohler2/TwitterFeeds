@@ -14,6 +14,17 @@ namespace TwitterFeeds.ViewModel
         IDataService dataService;
         protected IDataService DataService => dataService ?? (dataService = DependencyService.Get<IDataService>());
 
+        bool includeRetweets;
+        public bool IncludeRetweets 
+        { 
+            get { return includeRetweets; }
+            set 
+            { 
+                includeRetweets = value;
+                if (IsBusy) return;
+                SelectedFeedChanged().GetAwaiter();
+            }
+        }
         public List<Feed> Feeds { get; set; }
         public ObservableRangeCollection<Tweet> Tweets { get; set; }
         public Command<string> OpenTweetCommand { get; }
@@ -45,7 +56,7 @@ namespace TwitterFeeds.ViewModel
             if (SelectedFeed == null) return;
 
             IsBusy = true;
-            var items = await DataService.GetTweetsAsync(SelectedFeed.UserName);
+            var items = await DataService.GetTweetsAsync(SelectedFeed.UserName, IncludeRetweets);
             if (items == null)
             {
                 //await DisplayAlert("Error", "Unable to load tweets.", "OK");

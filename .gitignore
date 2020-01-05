@@ -197,3 +197,4 @@ FakesAssemblies/
 # Visual Studio 6 workspace options file
 *.opt
 /Source/LiarInChief/LiarInChief.Android/APKs/com.kohler.liarinchief-Signed.apk.1.3
+*.apk*

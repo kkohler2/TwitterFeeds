@@ -9,6 +9,7 @@ namespace TwitterFeeds.Models
         {
         }
 
+        public bool IsReTweet { get; set; }
         public string StatusID { get; set; }
         public string ScreenName { get; set; }
         public string Text { get; set; }

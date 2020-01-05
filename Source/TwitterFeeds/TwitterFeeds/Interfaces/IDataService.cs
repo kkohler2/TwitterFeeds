@@ -7,6 +7,6 @@ namespace TwitterFeeds.Interfaces
     public interface IDataService
     {
         Task<List<Feed>> GetFeedsAsync();
-        Task<IEnumerable<Tweet>> GetTweetsAsync(string screenName);
+        Task<IEnumerable<Tweet>> GetTweetsAsync(string screenName, bool includeRetweets);
     }
 }
