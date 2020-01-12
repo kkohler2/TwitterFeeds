@@ -21,8 +21,7 @@ namespace TwitterFeeds.ViewModel
             set 
             { 
                 includeRetweets = value;
-                if (IsBusy) return;
-                SelectedFeedChanged().GetAwaiter();
+                RefreshCommand.Execute(null);
             }
         }
         public List<Feed> Feeds { get; set; }

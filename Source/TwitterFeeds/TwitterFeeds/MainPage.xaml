@@ -24,9 +24,9 @@
 
     <StackLayout>
         <Picker x:Name="FeedPicker" ItemsSource="{Binding Feeds, Mode=TwoWay}" Title="Select Feed" ItemDisplayBinding="{Binding Name}" SelectedItem="{Binding SelectedFeed, Mode=TwoWay}" WidthRequest="300" FontSize="17"  HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand"/>
-        <StackLayout Orientation="Horizontal">
+        <StackLayout Orientation="Horizontal" Spacing="0">
             <Label Text="Include Retweets?" Padding="5,6,0,0"/>
-            <CheckBox IsChecked="{Binding IncludeRetweets}" Color="Black" />
+            <Switch IsToggled="{Binding IncludeRetweets}" OnColor="Green"/>
         </StackLayout>
         <Grid HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
             <ListView
