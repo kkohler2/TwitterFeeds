@@ -79,7 +79,7 @@ namespace TwitterFeeds.Services
                 IsReTweet = t?.RetweetedStatus != null,
                 StatusID = t?.RetweetedStatus?.User?.ScreenName == screenName ? t.RetweetedStatus.IdStr : t.IdStr,
                 ScreenName = t?.RetweetedStatus?.User?.ScreenName ?? t.User.ScreenName,
-                Text = t?.Text,
+                Text = t?.Text.Replace("&amp;","&"),
                 RetweetCount = t.RetweetCount,
                 FavoriteCount = t.FavoriteCount,
                 CreatedAt = GetDate(t.CreatedAt, DateTime.MinValue),
