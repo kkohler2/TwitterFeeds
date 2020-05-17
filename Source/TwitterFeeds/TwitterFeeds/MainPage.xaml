@@ -24,9 +24,10 @@
 
     <StackLayout>
         <Picker x:Name="FeedPicker" ItemsSource="{Binding Feeds, Mode=TwoWay}" Title="Select Feed" ItemDisplayBinding="{Binding Name}" SelectedItem="{Binding SelectedFeed, Mode=TwoWay}" WidthRequest="300" FontSize="17"  HorizontalOptions="StartAndExpand" VerticalOptions="StartAndExpand"/>
-        <StackLayout Orientation="Horizontal" Spacing="0">
+        <StackLayout Orientation="Horizontal" Spacing="0" HorizontalOptions="Fill">
             <Label Text="Include Retweets?" Padding="5,6,0,0"/>
             <Switch IsToggled="{Binding IncludeRetweets}" OnColor="Green"/>
+            <Button Text="Refresh" Command="{Binding UpdateCommand}" HorizontalOptions="EndAndExpand" BackgroundColor="AliceBlue" />
         </StackLayout>
         <Grid HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
             <ListView

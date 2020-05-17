@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using TwitterFeeds.Interfaces;
 using TwitterFeeds.Models;
 using Xamarin.Essentials;
@@ -11,6 +12,7 @@ namespace TwitterFeeds.ViewModel
 {
     public class MainPageViewModel : BaseViewModel
     {
+        public static MainPageViewModel Instance { get; set; }
         IDataService dataService;
         protected IDataService DataService => dataService ?? (dataService = DependencyService.Get<IDataService>());
 
@@ -29,6 +31,10 @@ namespace TwitterFeeds.ViewModel
         public Command<string> OpenTweetCommand { get; }
         public Command RefreshCommand { get; }
 
+        public ICommand UpdateCommand => new Command(() => UpdateSubscribeListAsync());
+
+        public Callback handler = UpdateComplete;
+
         public MainPageViewModel()
         {
             Tweets = new ObservableRangeCollection<Tweet>();
@@ -40,9 +46,32 @@ namespace TwitterFeeds.ViewModel
                     if (IsBusy) return;
                     await SelectedFeedChanged();
                 });
-    }
+            Instance = this;
+        }
 
-    private Feed _selectedFeed;
+        public async void UpdateSubscribeListAsync()
+        {
+            if (IsBusy) return;
+            IsBusy = true;
+            await Task.Delay(10);
+            await DataService.DownloadFeedList(UpdateComplete);
+        }
+
+        public void UpdateCompleted(List<Feed> feeds)
+        {
+            IsBusy = false;
+            if (feeds != null)
+            {
+                Feeds = feeds;
+            }
+        }
+
+        public static void UpdateComplete(List<Feed> feeds)
+        {
+            Instance.UpdateCompleted(feeds);
+        }
+
+        private Feed _selectedFeed;
 
         public Feed SelectedFeed
         {
@@ -85,9 +114,6 @@ namespace TwitterFeeds.ViewModel
 
             await OpenBrowserAsync($"http://twitter.com/{SelectedFeed.UserName}/status/" + statusId);
         }
-
-        //protected Task DisplayAlert(string title, string message, string cancel) =>
-        //    CurrentPage.DisplayAlert(title, message, cancel);
 
         public static Task OpenBrowserAsync(string url) =>
             Browser.OpenAsync(url, new BrowserLaunchOptions

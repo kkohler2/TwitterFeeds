@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <None Remove="Resources\feeds.txt" />
+    <None Remove="Resources\test.htm" />
   </ItemGroup>
 
   <ItemGroup>

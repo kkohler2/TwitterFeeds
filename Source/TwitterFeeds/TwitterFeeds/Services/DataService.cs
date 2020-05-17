@@ -1,7 +1,6 @@
-﻿using TwitterFeeds.Interfaces;
-using TwitterFeeds.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Json;
@@ -11,8 +10,9 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
-using Xamarin.Essentials;
+using System.Web;
+using TwitterFeeds.Interfaces;
+using TwitterFeeds.Models;
 
 namespace TwitterFeeds.Services
 {
@@ -25,10 +25,70 @@ namespace TwitterFeeds.Services
             client = new HttpClient();
         }
 
+        public async Task DownloadFeedList(Callback callback)
+        {
+            try
+            {
+                string ipAddress = string.Empty;
+                foreach (IPAddress address in Dns.GetHostAddresses(Dns.GetHostName()))
+                {
+                    var ip = address.ToString();
+                    if (ip.IndexOf("192.168.") == 0)
+                    {
+                        ipAddress = ip;
+                        break;
+                    }
+                }
+                if (string.IsNullOrEmpty(ipAddress))
+                {
+                    callback(null);
+                    return;
+                }
+                int pos = ipAddress.LastIndexOf(".");
+                string deviceIp = ipAddress.Substring(pos);
+
+                WebClient webClient = new WebClient();
+                string feedFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "feeds.txt");
+                string url = $"http://{ipAddress}:8081/feeds.txt";
+                for (int i = 2; 2 < 256; i++)
+                {
+                    string downloadUrl = url.Replace(deviceIp, "." + i.ToString());
+                    if (downloadUrl == url)
+                        continue;
+                    try
+                    {
+                        webClient.DownloadFile(new Uri(downloadUrl), feedFile);
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+                    bool result = File.Exists(feedFile);
+                    var feeds = await GetFeedsAsync();
+                    callback(feeds);
+                    break;
+                }
+            }
+            catch (Exception)
+            {
+                callback(null);
+            }
+        }
+
         public Task<List<Feed>> GetFeedsAsync()
         {
-            List<Feed> feeds = new List<Feed>();
             string indexFile = "feeds.txt";
+            List<Feed> feeds = new List<Feed>();
+            string feedFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), indexFile);
+            if (File.Exists(feedFile))
+            {
+                using (var stream = new FileStream(feedFile, FileMode.Open))
+                {
+                    ReedFeeds(feeds, stream);
+                }
+                return Task.FromResult(feeds);
+            }
+
             // Get Assembly
             var assembly = Assembly.GetExecutingAssembly();
 
@@ -40,25 +100,29 @@ namespace TwitterFeeds.Services
 
             using (var stream = assembly.GetManifestResourceStream(filePath))
             {
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    string l;
-                    while ((l = reader.ReadLine()) != null)
-                    {
-                        if (!string.IsNullOrEmpty(l))
-                        {
-                            string[] parts = l.Split(',');
-                            if (parts.Length == 2)
-                            {
-                                feeds.Add(new Feed { Name = parts[0], UserName = parts[1] });
-                            }
-                        }
-                    }
-                }
+                ReedFeeds(feeds, stream);
             }
             return Task.FromResult(feeds.OrderBy(f => f.Name).ToList());
         }
 
+        private static void ReedFeeds(List<Feed> feeds, Stream stream)
+        {
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                string l;
+                while ((l = reader.ReadLine()) != null)
+                {
+                    if (!string.IsNullOrEmpty(l))
+                    {
+                        string[] parts = l.Split(',');
+                        if (parts.Length == 2)
+                        {
+                            feeds.Add(new Feed { Name = parts[0], UserName = parts[1] });
+                        }
+                    }
+                }
+            }
+        }
 
         public async Task<IEnumerable<Tweet>> GetTweetsAsync(string screenName, bool includeRetweets)
         {
@@ -79,7 +143,7 @@ namespace TwitterFeeds.Services
                 IsReTweet = t?.RetweetedStatus != null,
                 StatusID = t?.RetweetedStatus?.User?.ScreenName == screenName ? t.RetweetedStatus.IdStr : t.IdStr,
                 ScreenName = t?.RetweetedStatus?.User?.ScreenName ?? t.User.ScreenName,
-                Text = t?.Text.Replace("&amp;","&"),
+                Text = HttpUtility.HtmlDecode(t?.Text),
                 RetweetCount = t.RetweetCount,
                 FavoriteCount = t.FavoriteCount,
                 CreatedAt = GetDate(t.CreatedAt, DateTime.MinValue),
