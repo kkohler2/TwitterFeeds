@@ -16,6 +16,16 @@ using TwitterFeeds.Models;
 
 namespace TwitterFeeds.Services
 {
+    public class MyWebClient : WebClient
+    {
+        protected override WebRequest GetWebRequest(Uri uri)
+        {
+            WebRequest w = base.GetWebRequest(uri);
+            w.Timeout = 5 * 1000;
+            return w;
+        }
+    }
+
     public class DataService : IDataService
     {
         private readonly HttpClient client;
@@ -47,23 +57,29 @@ namespace TwitterFeeds.Services
                 int pos = ipAddress.LastIndexOf(".");
                 string deviceIp = ipAddress.Substring(pos);
 
-                WebClient webClient = new WebClient();
+                MyWebClient webClient = new MyWebClient();
                 string feedFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "feeds.txt");
                 string url = $"http://{ipAddress}:8081/feeds.txt";
                 for (int i = 2; 2 < 256; i++)
                 {
                     string downloadUrl = url.Replace(deviceIp, "." + i.ToString());
+                    Debug.WriteLine($"Trying URL: {downloadUrl}");
                     if (downloadUrl == url)
                         continue;
                     try
                     {
                         webClient.DownloadFile(new Uri(downloadUrl), feedFile);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Debug.WriteLine($"Error: {ex.Message}");
                         continue;
                     }
                     bool result = File.Exists(feedFile);
+                    if (!result)
+                    {
+                        callback(null);
+                    }
                     var feeds = await GetFeedsAsync();
                     callback(feeds);
                     break;
@@ -86,7 +102,7 @@ namespace TwitterFeeds.Services
                 {
                     ReedFeeds(feeds, stream);
                 }
-                return Task.FromResult(feeds);
+                return Task.FromResult(feeds.OrderBy(t => t.Name).ToList());
             }
 
             // Get Assembly
